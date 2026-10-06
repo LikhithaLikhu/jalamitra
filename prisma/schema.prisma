@@ -1,0 +1,248 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  mobile       String   @unique
+  email        String   @unique
+  password     String
+  language     String   @default("en") // en, kn, hi
+  state        String?
+  district     String?
+  village      String?
+  role         String   @default("FARMER") // FARMER, TECHNICIAN, ADMIN
+  farms        Farm[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Farm {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  state            String
+  district         String
+  village          String
+  latitude         Float?
+  longitude        Float?
+  sizeAcres        Float
+  soilType         String            // Sandy, Sandy Loam, Loam, Clay, Clay Loam, Black Soil, Red Soil, etc.
+  waterSource      String            // Borewell, Open Well, Tank, Reservoir, Canal, Other
+  zones            FarmZone[]
+  devices          Device[]
+  irrigationEvents IrrigationEvent[]
+  alerts           Alert[]
+  waterUsageLogs   WaterUsageLog[]
+  aiRecommendations AIRecommendation[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Crop {
+  id                        String     @id @default(uuid())
+  name                      String     @unique
+  code                      String     @unique
+  category                  String     // Cereals, Vegetables, Cash Crops, Pulses, Fruits, Plantation
+  minMoistureDefault        Float      // e.g. 35%
+  maxMoistureDefault        Float      // e.g. 70%
+  targetMoistureDefault     Float      // e.g. 60%
+  maxIrrigationMinutesDefault Int      // e.g. 45
+  waterReqMmPerDay          Float      // e.g. 5.5
+  description               String?
+  zones                     FarmZone[]
+}
+
+model FarmZone {
+  id                     String            @id @default(uuid())
+  farmId                 String
+  farm                   Farm              @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name                   String            // Zone 1 - Tomato North, Zone 2 - Sprinkler East
+  zoneType               String            @default("DRIP") // DRIP, SPRINKLER, MICRO_SPRINKLER, MANUAL
+  cropId                 String?
+  crop                   Crop?             @relation(fields: [cropId], references: [id], onDelete: SetNull)
+  cropName               String            // Stored directly or from crop entity
+  growthStage            String            // Seedling, Vegetative, Flowering, Fruiting, Maturity
+  dripLines              Int?              // Drip parameters
+  numPlants              Int?
+  emittersPerPlant       Int?
+  emitterFlowRateLph     Float?            // Liters per hour per emitter
+  coverageAreaSqM        Float?            // Sprinkler parameters
+  sprinklerCount         Int?
+  sprinklerFlowRateLpm   Float?            // Liters per minute per sprinkler
+  pressureBar            Float?
+  minMoisture            Float             // Target thresholds (auto-generated or overridden)
+  maxMoisture            Float
+  targetMoisture         Float
+  maxIrrigationMinutes   Int
+  leakageFlowThresholdLpm Float             // Threshold for unexpected flow
+  expectedFlowRateLpm    Float             // Expected normal flow when valve open
+  devices                Device[]
+  irrigationEvents       IrrigationEvent[]
+  alerts                 Alert[]
+  waterUsageLogs         WaterUsageLog[]
+  automationRules        AutomationRule[]
+  aiRecommendations      AIRecommendation[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+}
+
+model Device {
+  id               String            @id @default(uuid())
+  deviceId         String            @unique // e.g. JALA-ESP32-001
+  apiKey           String            @unique
+  farmId           String?
+  farm             Farm?             @relation(fields: [farmId], references: [id], onDelete: SetNull)
+  zoneId           String?
+  zone             FarmZone?         @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  name             String
+  online           Boolean           @default(false)
+  lastSeen         DateTime?
+  firmwareVersion  String            @default("1.0.0")
+  batteryLevel     Float?            @default(100)
+  signalDb         Int?              @default(-65)
+  isSimulated      Boolean           @default(false)
+  pumpState        Boolean           @default(false)
+  valveState       Boolean           @default(false)
+  sensors          Sensor[]
+  sensorReadings   SensorReading[]
+  irrigationEvents IrrigationEvent[]
+  alerts           Alert[]
+  commands         DeviceCommand[]
+  logs             DeviceLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Sensor {
+  id                String          @id @default(uuid())
+  deviceId          String
+  device            Device          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  sensorType        String          // SOIL_MOISTURE, WATER_FLOW, LEAK_DETECTOR, TEMPERATURE, HUMIDITY
+  gpioPin           Int
+  calibrationOffset Float           @default(0.0)
+  status            String          @default("OK") // OK, FAULT, UNCALIBRATED
+  readings          SensorReading[]
+  createdAt         DateTime        @default(now())
+}
+
+model SensorReading {
+  id                String   @id @default(uuid())
+  deviceId          String
+  device            Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  sensorId          String?
+  sensor            Sensor?  @relation(fields: [sensorId], references: [id], onDelete: SetNull)
+  moisturePercent   Float?
+  flowRateLpm       Float?
+  totalVolumeLiters Float?
+  temperature       Float?
+  humidity          Float?
+  leakageDetected   Boolean  @default(false)
+  rawData           String?
+  createdAt         DateTime @default(now())
+}
+
+model IrrigationEvent {
+  id                String        @id @default(uuid())
+  farmId            String
+  farm              Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  zoneId            String
+  zone              FarmZone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  deviceId          String?
+  device            Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  triggerSource     String        @default("AUTOMATIC") // AUTOMATIC, MANUAL, SCHEDULED, AI
+  status            String        @default("STARTED") // STARTED, RUNNING, COMPLETED, STOPPED_SAFETY, STOPPED_LEAK, FAILED
+  startTime         DateTime      @default(now())
+  endTime           DateTime?
+  durationSeconds   Int?          @default(0)
+  waterVolumeLiters Float?        @default(0)
+  stopReason        String?
+  createdAt         DateTime      @default(now())
+}
+
+model AutomationRule {
+  id                   String   @id @default(uuid())
+  zoneId               String
+  zone                 FarmZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  farmId               String
+  isEnabled            Boolean  @default(true)
+  minMoistureTrigger   Float
+  stopTargetMoisture   Float
+  maxDurationMinutes   Int
+  checkLeakage         Boolean  @default(true)
+  requireDeviceOnline  Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  farmId      String
+  farm        Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  deviceId    String?
+  device      Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  zoneId      String?
+  zone        FarmZone? @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  alertType   String    // LOW_MOISTURE, HIGH_MOISTURE, LEAKAGE_DETECTED, DEVICE_OFFLINE, PUMP_SAFETY_SHUTDOWN, UNUSUAL_FLOW, SENSOR_FAULT
+  severity    String    @default("WARNING") // INFO, WARNING, CRITICAL
+  title       String
+  message     String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model WaterUsageLog {
+  id              String   @id @default(uuid())
+  farmId          String
+  farm            Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  zoneId          String?
+  zone            FarmZone?@relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  date            String   // YYYY-MM-DD
+  totalLiters     Float
+  durationMinutes Int
+  energyKwh       Float    @default(0)
+  createdAt       DateTime @default(now())
+}
+
+model DeviceCommand {
+  id        String        @id @default(uuid())
+  deviceId  String
+  device    Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  command   String        // PUMP_ON, PUMP_OFF, VALVE_OPEN, VALVE_CLOSE, CONFIG_UPDATE, FAILSAFE_SHUTDOWN
+  payload   String?       // JSON metadata
+  status    String        @default("PENDING") // PENDING, SENT, ACKNOWLEDGED, FAILED
+  sentAt    DateTime?
+  ackAt     DateTime?
+  createdAt DateTime      @default(now())
+}
+
+model DeviceLog {
+  id        String   @id @default(uuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  level     String   // INFO, WARN, ERROR, DEBUG
+  message   String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model AIRecommendation {
+  id             String   @id @default(uuid())
+  farmId         String
+  farm           Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  zoneId         String?
+  zone           FarmZone?@relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  prompt         String
+  recommendation String
+  rationale      String
+  confidence     Float
+  isFallback     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
