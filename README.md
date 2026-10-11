@@ -1,210 +1,183 @@
-# JALAMITRA – Smart Irrigation & Farm Management Platform
+# 🌱 JalaMitra (ಜಲಮಿತ್ರ / जलमित्र)
+### Smart Irrigation & Real-Time Water Leakage Detection System
 
-**JALAMITRA** ("Friend of Water") is a farmer-friendly, production-ready smart irrigation and agricultural management system. It empowers Indian farmers to monitor soil moisture live, automate drip and sprinkler irrigation networks, protect fields against pipe leakage, receive real AI agricultural recommendations, and control ESP32 microcontrollers remotely.
+> *"Smart Irrigation. Safe Water. Healthy Farms."*
 
----
-
-## 1. Project Overview
-
-Agriculture in India faces critical challenges with water scarcity, inefficient flood irrigation, undetected pipeline leaks, and over-watering. **JALAMITRA** bridges physical hardware and modern software to deliver:
-- **Smart Threshold Engine**: Auto-configures crop moisture targets based on ICAR/FAO agronomic standards without requiring technical expertise from the farmer.
-- **Dual-Sensor Leakage Protection**: Monitors expected vs actual water flow rates to trigger emergency pump shutdowns during line ruptures or valve failures.
-- **Real AI Farm Assistant**: Integrates with Google Gemini API to analyze soil data, growth stage, and weather forecasts before recommending irrigation actions.
-- **ESP32 Hardware Connectivity**: Supports direct REST telemetry and MQTT messaging with physical ESP32 devices.
+**JalaMitra** is an intelligent, farmer-centric IoT smart irrigation and pipeline leakage detection platform designed to interface with an ESP32 microcontroller or operate in an interactive browser-based demonstration mode. It automates farm watering based on live soil moisture measurements, instantly arrests pumping upon detecting pipe ruptures, and presents farmers with a top-down spatial view of their fields in **English**, **ಕನ್ನಡ (Kannada)**, and **हिन्दी (Hindi)**.
 
 ---
 
-## 2. Features
+## 🌟 Key Features
 
-- 🌾 **Smart Farm Setup Wizard**: 9-step wizard for location, soil, searchable crop database, growth stage, and hardware configuration.
-- 💧 **Drip & Sprinkler Support**: Emitter flow rates (LPH), lateral lines, sprinkler coverage (m²), and pressure management.
-- ⚙ **Failsafe Pump & Valve Control**: Backend-validated manual overrides and automated schedule triggers.
-- 🤖 **JALAMITRA AI Advisor**: Context-grounded agricultural recommendations with rationale, confidence ratings, and suggested actions.
-- 🌦 **Live Weather Integration**: Real-time forecast and rainfall probability powered by Open-Meteo API.
-- 📡 **ESP32 Device Management**: Hardware pairing, status monitoring, firmware versioning, and telemetry ingestion.
-- 🌐 **Multilingual Interface**: Complete translations for English, Kannada (ಕನ್ನಡ), and Hindi (हिन्दी).
-- 📊 **Analytics & Reports**: Historical water usage charts, pump runtime logs, and CSV report exports.
-- 🧪 **Simulation Mode**: Visual developer mode for testing sensor triggers without physical hardware.
+1. **Autonomous Soil Moisture Gating:**
+   - Automatically starts the irrigation pump when soil moisture drops below the low threshold (e.g. `< 30%`).
+   - Automatically halts the motor once target saturation is achieved (e.g. `≥ 45%`).
+   - Configurable maximum runtime cutoff to prevent overwatering and pump burnout.
+
+2. **Instant Pipeline Leakage Protection & Safety Lockout:**
+   - Multi-node monitoring across mainline valves, lateral drip pipes, and sprinkler zones.
+   - Immediate motor shutdown within milliseconds of detecting a leak.
+   - Spatial pipe highlight on the interactive farm map.
+   - **Safety Lockout Interlock:** Normal irrigation remains strictly locked until the farmer completes a physical pipe inspection and executes a **Safe Reset**.
+
+3. **Interactive Top-Down Farm Schematic (Live Map):**
+   - Illustrated layout with crop rows, overhead storage tank, 1.5 HP submersible pump, mainline pipes, drip emitters, and micro-sprinklers.
+   - Dynamic SVG water flow animations during active irrigation cycles.
+   - Click-to-inspect modals for every pump, tank, and sensor node.
+
+4. **Trilingual Farmer-Friendly UI:**
+   - Full native localization in **English**, **ಕನ್ನಡ (Kannada)**, and **हिन्दी (Hindi)**.
+   - Immediate language switching with persistent browser `localStorage` retention.
+
+5. **ESP32 Hardware-Ready Architecture:**
+   - Clear REST endpoint contract (`/api/telemetry` & `/api/motor`).
+   - Built-in connection tester with automatic fallback notice: *"No hardware connected. You are using Demo Mode."*
+   - Includes ready-to-flash Arduino/C++ firmware (`esp32_jalamitra.ino`).
+
+6. **Open Access Prototype:**
+   - **No login, passwords, OTP, or database required.**
+   - All settings, farm profiles, and audit logs persist in browser storage.
 
 ---
 
-## 3. Technology Stack
+## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Lucide Icons
-- **Backend**: Node.js, Next.js API Routes, Server-Sent Events / REST API
-- **Database**: Prisma ORM, SQLite (local development), PostgreSQL / Supabase / Neon (production deployment)
-- **AI Integration**: Google Gemini 1.5 Flash API with Agronomic Rule Engine Fallback
-- **Weather Service**: Open-Meteo REST API
-- **Hardware Integration**: ESP32 C++/Arduino Firmware, REST Telemetry (`/api/device/telemetry`)
+- **Frontend Core:** React 18, Vite 8, JavaScript (ESM)
+- **Styling & Design:** Tailwind CSS with custom agricultural palette (`farm`, `water`, `earth`)
+- **Icons:** Lucide React
+- **Data Visualizations:** Recharts (Dynamic soil moisture lines & weekly volumetric bars)
+- **Persistence:** Browser `localStorage`
+- **Firmware:** Arduino C++ for ESP32 (WiFiClient, WebServer, ArduinoJson)
 
 ---
 
-## 4. Project Architecture
+## 🧭 Application Navigation (13 Integrated Pages)
+
+1. **Welcome (`/welcome`):** Open-access hero with mode badge and quick-entry buttons.
+2. **My Smart Farm (`/dashboard`):** 8 live status cards, interactive farm schematic, live moisture chart, and real-time alert feed.
+3. **Live Farm Display (`/farm-display`):** Top-down spatial map with crop beds, pipelines, and sensor topology breakdown.
+4. **Irrigation Control (`/irrigation`):** Auto/Manual mode toggle, manual start/stop, big Emergency Stop button, threshold sliders, and safety interlock verification checklist.
+5. **Leakage Detection (`/leakage`):** Multi-sensor status cards, leak simulation, repair toggle, and safety lockout reset.
+6. **Live Monitoring (`/monitoring`):** Telemetry feed (capacitive moisture, air temp, humidity, soil temp, tank reserve, flow rate).
+7. **Farm Profile (`/profile`):** Configurable farm name, location, acreage, crop type, soil properties, and irrigation methods.
+8. **Smart Crop Advisor (`/advisor`):** Agronomic rule engine tailoring crop suggestions, water requirements, and cultivation tips by season and soil.
+9. **Water Management (`/water`):** Daily volumetric metering, estimated savings vs flood irrigation, and flow sensor disclosure.
+10. **Farm Assistant (`/assistant`):** Contextual advice prioritized by safety severity, daily water-saving strategies, and crop care tips.
+11. **ESP32 Connection (`/esp32`):** Hardware architecture diagram, IP endpoint tester, disconnect simulator, and copyable C++ sketch.
+12. **Reports & Logs (`/reports`):** Filterable activity log with severity badges and **Working CSV Export**.
+13. **Settings (`/settings`):** Threshold gating validation, flow rate ratings, interface language, and demonstration factory reset.
+
+---
+
+## 🧪 Demonstration & Test Scenarios
+
+The prototype includes built-in test flows designed for demonstration:
+
+- **Test A: Low Moisture Auto-Start:** Decrease the start threshold or allow natural drying in Auto mode. When moisture drops below start threshold, pump switches to `MOTOR RUNNING`, water animations appear, and event is logged.
+- **Test B: Target Moisture Auto-Stop:** While pump is running, moisture climbs; once target threshold is reached, pump automatically stops.
+- **Test C: Leakage Detected:** Click **"Simulate Water Leakage"** on any pipe sensor. The pump halts instantly, the pipe pulses red, safety lockout engages, and normal starts are rejected until a **Safe Reset** is performed.
+- **Test D: Manual Control & Emergency Stop:** Switch to Manual mode to test manual start/stop. Click **"EMERGENCY STOP"** to verify immediate shutdown.
+- **Test E: Hardware Disconnection:** Under the ESP32 page, toggle **"Simulate Disconnect"** to demonstrate graceful offline warnings without crashing.
+- **Test F: Language Switching:** Toggle between English, ಕನ್ನಡ, and हिन्दी from the top navbar to verify immediate translation.
+
+---
+
+## ⚡ ESP32 Hardware Integration & Safety Architecture
+
+### System Data Flow
 
 ```text
-Physical Sensors (Moisture ADC, Flow Meter)
-           │
-           ▼
-    ESP32 Microcontroller (Wi-Fi)
-           │
-           ▼ (HTTP POST / REST Telemetry)
-┌─────────────────────────────────────────────────────────┐
-│              JALAMITRA Backend (Next.js API)            │
-│                                                         │
-│  ┌──────────────────┐   ┌────────────────────────────┐  │
-│  │ Leak Detection   │   │ Smart Threshold Engine     │  │
-│  └──────────────────┘   └────────────────────────────┘  │
-│  ┌──────────────────┐   ┌────────────────────────────┐  │
-│  │ Automation Rules │   │ Gemini AI Context Advisor  │  │
-│  └──────────────────┘   └────────────────────────────┘  │
-└────────────────────────────┬────────────────────────────┘
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-   Database (Prisma / SQL)          Farmer Dashboard (Web/Mobile)
+[ Capacitive Soil Moisture Sensor (ADC 34) ]
+                   │
+[ Digital Pipeline Leak Sensors (GPIO 18, 19) ]
+                   │
+                   ▼
+       ┌──────────────────────┐
+       │ ESP32 Microcontroller│
+       │ (Autonomous FreeRTOS)│
+       └──────────┬───────────┘
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+[ Relay Module (GPIO 26) ] [ Wi-Fi HTTP Telemetry Server ]
+        │                   │
+        ▼                   ▼
+[ 1.5 HP Submersible Pump ] [ JalaMitra Web Dashboard ]
 ```
+
+### ESP32 REST Endpoint Specification
+
+1. **`GET /api/telemetry`**
+   - Returns current sensor telemetry in JSON:
+     ```json
+     {
+       "deviceId": "JALA-ESP32-001",
+       "moisture": 38.5,
+       "rawAdc": 2150,
+       "pumpState": "OFF",
+       "leakDetected": false,
+       "safetyLockout": false,
+       "timestamp": 128490
+     }
+     ```
+
+2. **`POST /api/motor?action=START` or `action=STOP`**
+   - Actuates physical relay (Active-LOW). Refuses start command if `safetyLockout` is `true`.
+
+### Hardware Safety Principles
+
+- **Edge Autonomy:** The ESP32 executes its own internal FreeRTOS safety loop. If a pipe leaks, the microcontroller turns off the pump relay locally in hardware even if the browser is closed or Wi-Fi is lost.
+- **Galvanic Isolation:** Mains-voltage pump wiring (230V AC) must use an optocoupled relay with flyback snubber protection.
+- **Dry-Run Protection:** Minimum reservoir water level prevents pump impeller burnout.
 
 ---
 
-## 5. Local Installation
+## 🚀 Local Development Setup
 
 ### Prerequisites
-- Node.js v18.0 or higher
-- npm or pnpm or yarn
 
-### Steps
+- Node.js (v18.x or v20.x+)
+- npm or yarn
+
+### Installation Commands
+
 ```bash
-# 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/jalamitra.git
+# Clone or navigate to the repository
 cd jalamitra
 
-# 2. Install dependencies
+# Install project dependencies
 npm install
-```
 
----
-
-## 6. Environment Variables
-
-Create a `.env` file in the project root based on `.env.example`:
-
-```env
-# Database URL (SQLite for local dev, PostgreSQL for production)
-DATABASE_URL="file:./dev.db"
-
-# JWT Secret for Session Authentication
-JWT_SECRET="your-strong-production-jwt-secret"
-
-# Google Gemini API Key for AI Assistant (Server-side)
-GEMINI_API_KEY="your-google-gemini-api-key"
-
-# App URL
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
-
----
-
-## 7. Database Setup
-
-```bash
-# Generate Prisma Client
-npm run prisma:generate
-
-# Push database schema
-npm run prisma:push
-
-# Seed database with crops and demo farm data
-npm run prisma:seed
-```
-
----
-
-## 8. Running Locally
-
-```bash
+# Start the Vite local development server
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser.
-
-#### Demo Credentials:
-- **Email**: `farmer@jalamitra.in`
-- **Password**: `password123`
+The application will start at `http://localhost:3000`.
 
 ---
 
-## 9. Production Build
+## 📦 Production Build & Vercel Deployment
+
+### Build for Production
 
 ```bash
 npm run build
-npm run start
 ```
 
----
+The compiled, minified bundle will be output to the `dist/` folder.
 
-## 10. ESP32 Integration
-
-Refer to the complete hardware integration guide in `docs/ESP32_SETUP.md` and Arduino starter code in `firmware/esp32_jalamitra.ino`.
-
-### Hardware Telemetry Endpoint
-`POST /api/device/telemetry`
-
-### Headers:
-```http
-X-Device-Id: JALA-ESP32-001
-X-Api-Key: sec_jala_esp32_demo_key_99
-```
-
----
-
-## 11. MQTT / API Configuration
-
-While the standard deployment uses HTTP REST telemetry, JALAMITRA can also be connected to an MQTT Broker (e.g. EMQX / HiveMQ) for real-time pub/sub:
-- Topic `jalamitra/devices/{deviceId}/telemetry`
-- Topic `jalamitra/devices/{deviceId}/commands`
-
----
-
-## 12. AI Configuration
-
-Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/) and set `GEMINI_API_KEY` in your production environment variables. If no API key is set, JALAMITRA automatically uses its agronomic rule engine fallback.
-
----
-
-## 13. Weather API Configuration
-
-Weather data is fetched live from Open-Meteo using farm latitude and longitude coordinates. No external API key is required.
-
----
-
-## 14. GitHub Setup
-
-```bash
-git init
-git add .
-git commit -m "Initial production-ready JALAMITRA application"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/jalamitra.git
-git push -u origin main
-```
-
----
-
-## 15. Vercel Deployment
+### Deploying to Vercel
 
 1. Push your repository to GitHub.
-2. Import the project into [Vercel](https://vercel.com).
-3. Set Environment Variables on Vercel:
-   - `DATABASE_URL`: Your production PostgreSQL URL (e.g., Supabase / Neon / Vercel Postgres)
-   - `JWT_SECRET`: A strong secret key
-   - `GEMINI_API_KEY`: Your Gemini API Key
-4. Deploy!
-
-> **Note on Production Database**: For Vercel deployment, update `prisma/schema.prisma` datasource provider to `postgresql` and set `DATABASE_URL` to your PostgreSQL database connection string.
+2. Log into [Vercel](https://vercel.com) and import the repository.
+3. Configure the build settings:
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Click **Deploy**. The application will be live immediately without needing any server database or environment variables!
 
 ---
 
-## 16. Troubleshooting
+## 📄 License & Academic Attribution
 
-- **Prisma Engine Lock Error**: If `npx prisma generate` gives an EPERM error on Windows, stop any running `npm run dev` servers and re-run `npx prisma generate`.
-- **Weather API Timeout**: If Open-Meteo is unreachable, the weather service uses realistic climate fallbacks without breaking the dashboard.
+Created for agricultural engineering and IoT academic presentation. Built with care for farmers across India and the globe.

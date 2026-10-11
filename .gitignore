@@ -8,6 +8,8 @@
 /out/
 /build
 /dist
+*- Copy/
+* - Copy/
 
 # Environment variables & secrets (NEVER COMMIT REAL SECRETS)
 .env
